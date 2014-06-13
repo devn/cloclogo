@@ -5,8 +5,7 @@
 (ns cloclogo.model-gen
   (:use
     [cloclogo.ontology :only (relations) :as ontology]
-    [cloclogo.classpath :only (implementations-of)]
-    [clojure.core.incubator :only (-?>)])
+    [cloclogo.classpath :only (implementations-of)])
   (:require clojure.repl
             [cheshire.core :as json]))
 
@@ -36,9 +35,9 @@
      :id (str ns \/ name)
      :info {:ns ns
             :name name
-            :args (-?> meta :arglists str)
-            :added (-?> meta :added str)
-            :doc (-?> meta :doc str)
+            :args (some-> meta :arglists str)
+            :added (some-> meta :added str)
+            :doc (some-> meta :doc str)
             :source (clojure.repl/source-fn (symbol ns name))}}))
 
 (defn- lift-map-info
@@ -177,3 +176,13 @@
             (format "function buildOntology () { \nreturn (%s); };" (json/generate-string ontology {:pretty true})))
           :enc "UTF-8")
     (println "Wrote ontology to" path)))
+
+                                        ; Looking Around...
+
+(def q-ontology (expanded-ontology cloclogo.ontology/ontology))
+
+(defn select-concepts [] (filter #(-> % val :type (= :concept)) q-ontology))
+
+(defn print-concepts []
+  (doseq [[i [k _]] (map-indexed vector (sort (select-concepts)))]
+    (println (format "%d.) %s" (inc i) k))))
